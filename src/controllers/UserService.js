@@ -1,37 +1,36 @@
 'use strict';
 
-/**
- * BBS
- */
 var db = require('sample-db');
 var logger = require('sample-logger');
-var TABLE_NAME = 'user';
+var TABLE_NAME = 'users';
 
 /**
- * 追加
+ * ユーザー追加
  */
 exports.createUser = function(args, res, next) {
   var params = args.body.value;
   var query = db.insert(TABLE_NAME, params);
 
-  query.then(function(row) {
+  query.then(function(insertId) {
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Location', 'https://api.local-fw.com/v1/user/' + row);
-    res.end(JSON.stringify({"userId": row}));
+    res.setHeader('Location', 'https://node.local-fw.com/v1/users/' + insertId);
+    res.status(201);
+    res.end(JSON.stringify({"insertId": insertId}));
   }).catch(function (error) {
     next(error);
   });
 };
 
 /**
- * 削除
+ * ユーザー削除
  */
 exports.deleteUser = function(args, res, next) {
-  var where = {'user_id' : args.userId.value };
+  var where = {'userId' : args.userId.value };
   var query = db.delete(TABLE_NAME, where);
 
   query.then(function(rows) {
     res.setHeader('Content-Type', 'application/json');
+    res.status(204);
     res.end();
   }).catch(function (error) {
     next(error);
@@ -39,27 +38,30 @@ exports.deleteUser = function(args, res, next) {
 };
 
 /**
- * キー検索
+ * ユーザー取得
  */
 exports.getUser = function(args, res, next) {
-  var sql = 'SELECT * FROM user where user_id = ?';
+  var sql = 'SELECT * FROM users where user_id = ?';
   var param = args.userId.value;
   var query = db.getOne(sql, param);
 
-  query.then(function(rows) {
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(rows));
+  query.then(function(row) {
+    if (row === undefined) {
+      next();
+    } else {
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify(row));
+    }
   }).catch(function (error) {
     next(error);
-  });
-};
+  })};
 
 /**
- * 一覧検索
+ * ユーザー一覧取得
  */
 exports.listUser = function(args, res, next) {
   var param = {};
-  var sql   = 'SELECT * FROM user';
+  var sql   = 'SELECT * FROM users';
   var query = db.query(sql, param);
 
   query.then(function(rows) {
@@ -71,17 +73,20 @@ exports.listUser = function(args, res, next) {
 };
 
 /**
- * 更新
+ * ユーザー更新
  */
 exports.updateUser = function(args, res, next) {
   var param = args.body.value;
   var where = {user_id: args.userId.value};
   var query = db.update(TABLE_NAME, param, where);
 
-  query.then(function(rows) {
+  query.then(function(row) {
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Location', 'https://node.local-fw.com/v1/users/' + args.userId.value);
+    res.status(204);
     res.end();
   }).catch(function (error) {
     next(error);
   });
 };
+

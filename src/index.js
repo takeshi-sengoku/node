@@ -2,16 +2,13 @@
 
 // Require
 var conf    = require('config');
-var os      = require('os');
 var express = require('express');
 var helmet  = require('helmet');
 var logger  = require('sample-logger');
 var compression = require('compression');
 var httpAccessLogger  = require('sample-http-access-logger');
 var requestLogger  = require('sample-request-logger');
-var sprintf = require('sprintf-js').sprintf;
 var connectionPoolMiddleware = require('sample-connection-pool-middleware');
-var validatorMiddleware = require('sample-validator-middleware');
 var https = require('https');
 var bodyParser = require('body-parser');
 var multer = require('multer');
@@ -20,7 +17,6 @@ var swaggerTools = require('swagger-tools');
 var jsyaml = require('js-yaml');
 var fs = require('fs');
 
-var serverHost = os.hostname();
 var serverPort = conf.port;
 var app = express();
 var secureServer;
@@ -66,7 +62,6 @@ swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
   app.use(middleware.swaggerValidator({
     validateResponse : false // TODO: API定義が固まったらtrueにする
   }));
-//  app.use(validatorMiddleware());
   // Route validated requests to appropriate controller
   app.use(middleware.swaggerRouter(options));
   // Serve the Swagger documents and Swagger UI

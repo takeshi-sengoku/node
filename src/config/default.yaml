@@ -10,7 +10,7 @@ certKey: '/etc/cert/local-fw.com/node/cert.key'
 
 # MySQL設定
 mysqlConfig:
-  host: '192.168.56.223'
+  host: '192.168.56.103'
   port: 3306
   user: 'vagrant'
   password: 'vagrant'
