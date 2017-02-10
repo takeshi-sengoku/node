@@ -1,0 +1,494 @@
+---
+swagger: "2.0"
+info:
+  description: "`Swagger`を使用したREST APIのサンプルです\n"
+  version: "1.0.0"
+  title: "Sample REST API"
+  termsOfService: ""
+host: "node.local-fw.com"
+basePath: "/v1/api"
+tags:
+- name: "User"
+  description: "ユーザー"
+- name: "Bbs"
+  description: "BBS"
+schemes:
+- "https"
+consumes:
+- "application/json"
+- "text/html"
+produces:
+- "application/json"
+- "text/html"
+security:
+- ApiSecurity:
+  - "write:user"
+  - "read:user"
+  - "write:bbs"
+  - "read:bbs"
+paths:
+  /users:
+    get:
+      tags:
+      - "User"
+      description: "ユーザー一覧取得"
+      operationId: "listUser"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/userList"
+        401:
+          description: "認証エラー"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "read:user"
+      x-swagger-router-controller: "User"
+    post:
+      tags:
+      - "User"
+      description: "ユーザー追加"
+      operationId: "createUser"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "追加ユーザー情報"
+        required: true
+        schema:
+          $ref: "#/definitions/createUser"
+      responses:
+        201:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/insertId"
+          headers:
+            Location:
+              type: "string"
+              format: "url"
+              description: "作成されたユーザーのリンクURL"
+        400:
+          description: "リクエスト情報が不正です"
+          schema:
+            $ref: "#/definitions/error"
+        401:
+          description: "認証エラー"
+        409:
+          description: "作成しようとしたリソースが既に登録されています"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "write:user"
+      x-swagger-router-controller: "User"
+  /users/{userId}:
+    get:
+      tags:
+      - "User"
+      description: "ユーザー取得"
+      operationId: "getUser"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "ユーザーID"
+        required: true
+        type: "integer"
+        format: "int32"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/user"
+        400:
+          description: "リクエスト情報が不正です"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "read:user"
+      x-swagger-router-controller: "User"
+    put:
+      tags:
+      - "User"
+      description: "ユーザー更新"
+      operationId: "updateUser"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "ユーザーID"
+        required: true
+        type: "integer"
+        format: "int32"
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/createUser"
+      responses:
+        204:
+          description: "OK"
+        400:
+          description: "リクエスト情報が不正です"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "write:user"
+      x-swagger-router-controller: "User"
+    delete:
+      tags:
+      - "User"
+      description: "ユーザー削除"
+      operationId: "deleteUser"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "ユーザーID"
+        required: true
+        type: "integer"
+        format: "int32"
+      responses:
+        204:
+          description: "OK"
+        400:
+          description: "リクエスト情報が不正です"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "write:user"
+      x-swagger-router-controller: "User"
+  /bbs:
+    get:
+      tags:
+      - "Bbs"
+      description: "Bbs一覧取得"
+      operationId: "listBbs"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/bbsList"
+        401:
+          description: "認証エラー"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "read:bbs"
+      x-swagger-router-controller: "Bbs"
+    post:
+      tags:
+      - "Bbs"
+      description: "BBS追加"
+      operationId: "createBbs"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "追加Bbs情報"
+        required: true
+        schema:
+          $ref: "#/definitions/createBbs"
+      responses:
+        201:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/insertId"
+          headers:
+            Location:
+              type: "string"
+              format: "url"
+              description: "作成されたBbsのリンクURL"
+        400:
+          description: "リクエスト情報が不正です"
+          schema:
+            $ref: "#/definitions/error"
+        401:
+          description: "認証エラー"
+        409:
+          description: "作成しようとしたリソースが既に登録されています"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "write:bbs"
+      x-swagger-router-controller: "Bbs"
+  /bbs/{bbsId}:
+    get:
+      tags:
+      - "Bbs"
+      description: "Bbs取得"
+      operationId: "getBbs"
+      parameters:
+      - name: "bbsId"
+        in: "path"
+        description: "BBSID"
+        required: true
+        type: "integer"
+        format: "int32"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/bbs"
+        400:
+          description: "リクエスト情報が不正です"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "read:bbs"
+      x-swagger-router-controller: "Bbs"
+    put:
+      tags:
+      - "Bbs"
+      description: "Bbs更新"
+      operationId: "updateBbs"
+      parameters:
+      - name: "bbsId"
+        in: "path"
+        description: "BBSID"
+        required: true
+        type: "integer"
+        format: "int32"
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/createBbs"
+      responses:
+        204:
+          description: "OK"
+        400:
+          description: "リクエスト情報が不正です"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "write:bbs"
+      x-swagger-router-controller: "Bbs"
+    delete:
+      tags:
+      - "Bbs"
+      description: "BBS削除"
+      operationId: "deleteBbs"
+      parameters:
+      - name: "bbsId"
+        in: "path"
+        description: "BBSID"
+        required: true
+        type: "integer"
+        format: "int32"
+      responses:
+        204:
+          description: "OK"
+        400:
+          description: "リクエスト情報が不正です"
+          schema:
+            $ref: "#/definitions/error"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "write:bbs"
+      x-swagger-router-controller: "Bbs"
+securityDefinitions:
+  ApiSecurity:
+    type: "oauth2"
+    authorizationUrl: "/oauth/authorize"
+    tokenUrl: "/oauth/accessToken"
+    flow: "accessCode"
+    scopes:
+      write:user: "ユーザー編集権限"
+      read:user: "ユーザー参照権限"
+      write:bbs: "BBS編集権限"
+      read:bbs: "BBS参照権限"
+definitions:
+  user:
+    allOf:
+    - $ref: "#/definitions/createUser"
+    - type: "object"
+      properties:
+        userId:
+          $ref: "#/definitions/insertId"
+        createDate:
+          type: "string"
+          format: "date-time"
+          description: "ユーザーID"
+        updateDate:
+          type: "string"
+          format: "date-time"
+          description: "ユーザーID"
+  userList:
+    type: "object"
+    properties:
+      data:
+        type: "array"
+        items:
+          $ref: "#/definitions/user"
+    title: "accountList"
+  createUser:
+    type: "object"
+    required:
+    - "hideMail"
+    - "hideName"
+    - "mail"
+    - "name"
+    - "password"
+    - "userType"
+    properties:
+      name:
+        type: "string"
+        description: "ユーザーID"
+        maxLength: 128
+      password:
+        type: "string"
+        format: "password"
+        description: "パスワード"
+        maxLength: 256
+      mail:
+        type: "string"
+        format: "email"
+        description: "メールアドレス"
+        maxLength: 255
+      userType:
+        type: "integer"
+        format: "int32"
+        description: "管理権限（1:admin、2:user）"
+        enum:
+        - 1
+        - 2
+      hideName:
+        type: "integer"
+        format: "int32"
+        description: "名前非表示（0:表示、1:非表示）"
+        enum:
+        - 0
+        - 1
+      hideMail:
+        type: "integer"
+        format: "int32"
+        description: "メールアドレス非表示（0:表示、1:非表示）"
+        enum:
+        - 0
+        - 1
+      expired:
+        type: "string"
+        format: "date-time"
+        description: "アカウント期限切れ日時"
+    title: "createUser"
+  bbs:
+    allOf:
+    - $ref: "#/definitions/createBbs"
+    - type: "object"
+      properties:
+        bbsId:
+          $ref: "#/definitions/insertId"
+        createDate:
+          type: "string"
+          format: "date-time"
+          description: "ユーザーID"
+        updateDate:
+          type: "string"
+          format: "date-time"
+          description: "ユーザーID"
+  bbsList:
+    type: "object"
+    properties:
+      data:
+        type: "array"
+        items:
+          $ref: "#/definitions/bbs"
+    title: "bbsList"
+  createBbs:
+    type: "object"
+    required:
+    - "message"
+    - "userId"
+    properties:
+      userId:
+        type: "integer"
+        format: "int32"
+        description: "ユーザーID"
+      message:
+        type: "string"
+        description: "メッセージ"
+    title: "createBbs"
+  insertId:
+    type: "object"
+    properties:
+      insertId:
+        type: "integer"
+        format: "int32"
+        description: "insertId"
+  error:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      message:
+        type: "string"
+      fields:
+        type: "string"
+parameters:
+  userId:
+    name: "userId"
+    in: "path"
+    description: "ユーザーID"
+    required: true
+    type: "integer"
+    format: "int32"
+  bbsId:
+    name: "bbsId"
+    in: "path"
+    description: "BBSID"
+    required: true
+    type: "integer"
+    format: "int32"
+responses:
+  badRequest:
+    description: "リクエスト情報が不正です"
+    schema:
+      $ref: "#/definitions/error"
+  unAuthorized:
+    description: "認証エラー"
+  Confrict:
+    description: "作成しようとしたリソースが既に登録されています"
+  unexpected:
+    description: "予期しないエラー"
+    schema:
+      $ref: "#/definitions/error"
