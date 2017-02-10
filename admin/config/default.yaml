@@ -1,7 +1,7 @@
 
-port : 443
+port : 4432
 dateYMD : 'YYYY-MM-DD'
-appBasePath: '/srv/apps/sample/src'
+appBasePath: '/srv/apps/sample/admin'
 logBasePath: '/var/log/fw/node'
 
 certCrt: '/etc/cert/local-fw.com/node/cert.crt'

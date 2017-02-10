@@ -3,15 +3,13 @@ swagger: "2.0"
 info:
   description: "`Swagger`を使用したREST APIのサンプルです\n"
   version: "1.0.0"
-  title: "Sample REST API"
+  title: "Admin - Sample REST API"
   termsOfService: ""
-host: "node.local-fw.com"
+host: "node.local-fw.com:4432"
 basePath: "/v1/api"
 tags:
-- name: "User"
-  description: "ユーザー"
-- name: "Bbs"
-  description: "BBS"
+- name: "Admin"
+  description: "管理者"
 schemes:
 - "https"
 consumes:
@@ -22,23 +20,21 @@ produces:
 - "text/html"
 security:
 - ApiSecurity:
-  - "write:user"
-  - "read:user"
-  - "write:bbs"
-  - "read:bbs"
+  - "write:admin"
+  - "read:admin"
 paths:
-  /users:
+  /admins:
     get:
       tags:
-      - "User"
-      description: "ユーザー一覧取得"
-      operationId: "listUser"
+      - "Admin"
+      description: "管理者一覧取得"
+      operationId: "listAdmin"
       parameters: []
       responses:
         200:
           description: "OK"
           schema:
-            $ref: "#/definitions/userList"
+            $ref: "#/definitions/adminList"
         401:
           description: "認証エラー"
         default:
@@ -47,20 +43,20 @@ paths:
             $ref: "#/definitions/error"
       security:
       - ApiSecurity:
-        - "read:user"
-      x-swagger-router-controller: "User"
+        - "read:admin"
+      x-swagger-router-controller: "Admin"
     post:
       tags:
-      - "User"
-      description: "ユーザー追加"
-      operationId: "createUser"
+      - "Admin"
+      description: "管理者追加"
+      operationId: "createAdmin"
       parameters:
       - in: "body"
         name: "body"
-        description: "追加ユーザー情報"
+        description: "追加管理者情報"
         required: true
         schema:
-          $ref: "#/definitions/createUser"
+          $ref: "#/definitions/createAdmin"
       responses:
         201:
           description: "OK"
@@ -70,7 +66,7 @@ paths:
             Location:
               type: "string"
               format: "url"
-              description: "作成されたユーザーのリンクURL"
+              description: "作成された管理者のリンクURL"
         400:
           description: "リクエスト情報が不正です"
           schema:
@@ -85,26 +81,26 @@ paths:
             $ref: "#/definitions/error"
       security:
       - ApiSecurity:
-        - "write:user"
-      x-swagger-router-controller: "User"
-  /users/{userId}:
+        - "write:admin"
+      x-swagger-router-controller: "Admin"
+  /admins/{adminId}:
     get:
       tags:
-      - "User"
-      description: "ユーザー取得"
-      operationId: "getUser"
+      - "Admin"
+      description: "管理者取得"
+      operationId: "getAdmin"
       parameters:
-      - name: "userId"
+      - name: "adminId"
         in: "path"
-        description: "ユーザーID"
+        description: "管理者ID"
         required: true
         type: "integer"
-        format: "int32"
+        format: "int64"
       responses:
         200:
           description: "OK"
           schema:
-            $ref: "#/definitions/user"
+            $ref: "#/definitions/admin"
         400:
           description: "リクエスト情報が不正です"
           schema:
@@ -115,25 +111,25 @@ paths:
             $ref: "#/definitions/error"
       security:
       - ApiSecurity:
-        - "read:user"
-      x-swagger-router-controller: "User"
+        - "read:admin"
+      x-swagger-router-controller: "Admin"
     put:
       tags:
-      - "User"
-      description: "ユーザー更新"
-      operationId: "updateUser"
+      - "Admin"
+      description: "管理者更新"
+      operationId: "updateAdmin"
       parameters:
-      - name: "userId"
+      - name: "adminId"
         in: "path"
-        description: "ユーザーID"
+        description: "管理者ID"
         required: true
         type: "integer"
-        format: "int32"
+        format: "int64"
       - in: "body"
         name: "body"
         required: false
         schema:
-          $ref: "#/definitions/createUser"
+          $ref: "#/definitions/createAdmin"
       responses:
         204:
           description: "OK"
@@ -147,20 +143,20 @@ paths:
             $ref: "#/definitions/error"
       security:
       - ApiSecurity:
-        - "write:user"
-      x-swagger-router-controller: "User"
+        - "write:admin"
+      x-swagger-router-controller: "Admin"
     delete:
       tags:
-      - "User"
-      description: "ユーザー削除"
-      operationId: "deleteUser"
+      - "Admin"
+      description: "管理者削除"
+      operationId: "deleteAdmin"
       parameters:
-      - name: "userId"
+      - name: "adminId"
         in: "path"
-        description: "ユーザーID"
+        description: "管理者ID"
         required: true
         type: "integer"
-        format: "int32"
+        format: "int64"
       responses:
         204:
           description: "OK"
@@ -174,157 +170,8 @@ paths:
             $ref: "#/definitions/error"
       security:
       - ApiSecurity:
-        - "write:user"
-      x-swagger-router-controller: "User"
-  /bbs:
-    get:
-      tags:
-      - "Bbs"
-      description: "Bbs一覧取得"
-      operationId: "listBbs"
-      parameters: []
-      responses:
-        200:
-          description: "OK"
-          schema:
-            $ref: "#/definitions/bbsList"
-        401:
-          description: "認証エラー"
-        default:
-          description: "予期しないエラー"
-          schema:
-            $ref: "#/definitions/error"
-      security:
-      - ApiSecurity:
-        - "read:bbs"
-      x-swagger-router-controller: "Bbs"
-    post:
-      tags:
-      - "Bbs"
-      description: "BBS追加"
-      operationId: "createBbs"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "追加Bbs情報"
-        required: true
-        schema:
-          $ref: "#/definitions/createBbs"
-      responses:
-        201:
-          description: "OK"
-          schema:
-            $ref: "#/definitions/insertId"
-          headers:
-            Location:
-              type: "string"
-              format: "url"
-              description: "作成されたBbsのリンクURL"
-        400:
-          description: "リクエスト情報が不正です"
-          schema:
-            $ref: "#/definitions/error"
-        401:
-          description: "認証エラー"
-        409:
-          description: "作成しようとしたリソースが既に登録されています"
-        default:
-          description: "予期しないエラー"
-          schema:
-            $ref: "#/definitions/error"
-      security:
-      - ApiSecurity:
-        - "write:bbs"
-      x-swagger-router-controller: "Bbs"
-  /bbs/{bbsId}:
-    get:
-      tags:
-      - "Bbs"
-      description: "Bbs取得"
-      operationId: "getBbs"
-      parameters:
-      - name: "bbsId"
-        in: "path"
-        description: "BBSID"
-        required: true
-        type: "integer"
-        format: "int32"
-      responses:
-        200:
-          description: "OK"
-          schema:
-            $ref: "#/definitions/bbs"
-        400:
-          description: "リクエスト情報が不正です"
-          schema:
-            $ref: "#/definitions/error"
-        default:
-          description: "予期しないエラー"
-          schema:
-            $ref: "#/definitions/error"
-      security:
-      - ApiSecurity:
-        - "read:bbs"
-      x-swagger-router-controller: "Bbs"
-    put:
-      tags:
-      - "Bbs"
-      description: "Bbs更新"
-      operationId: "updateBbs"
-      parameters:
-      - name: "bbsId"
-        in: "path"
-        description: "BBSID"
-        required: true
-        type: "integer"
-        format: "int32"
-      - in: "body"
-        name: "body"
-        required: false
-        schema:
-          $ref: "#/definitions/createBbs"
-      responses:
-        204:
-          description: "OK"
-        400:
-          description: "リクエスト情報が不正です"
-          schema:
-            $ref: "#/definitions/error"
-        default:
-          description: "予期しないエラー"
-          schema:
-            $ref: "#/definitions/error"
-      security:
-      - ApiSecurity:
-        - "write:bbs"
-      x-swagger-router-controller: "Bbs"
-    delete:
-      tags:
-      - "Bbs"
-      description: "BBS削除"
-      operationId: "deleteBbs"
-      parameters:
-      - name: "bbsId"
-        in: "path"
-        description: "BBSID"
-        required: true
-        type: "integer"
-        format: "int32"
-      responses:
-        204:
-          description: "OK"
-        400:
-          description: "リクエスト情報が不正です"
-          schema:
-            $ref: "#/definitions/error"
-        default:
-          description: "予期しないエラー"
-          schema:
-            $ref: "#/definitions/error"
-      security:
-      - ApiSecurity:
-        - "write:bbs"
-      x-swagger-router-controller: "Bbs"
+        - "write:admin"
+      x-swagger-router-controller: "Admin"
 securityDefinitions:
   ApiSecurity:
     type: "oauth2"
@@ -332,47 +179,42 @@ securityDefinitions:
     tokenUrl: "/oauth/accessToken"
     flow: "accessCode"
     scopes:
-      write:user: "ユーザー編集権限"
-      read:user: "ユーザー参照権限"
-      write:bbs: "BBS編集権限"
-      read:bbs: "BBS参照権限"
+      write:admin: "管理者編集権限"
+      read:admin: "管理者参照権限"
 definitions:
-  user:
+  admin:
     allOf:
-    - $ref: "#/definitions/createUser"
+    - $ref: "#/definitions/createAdmin"
     - type: "object"
       properties:
-        userId:
+        adminId:
           $ref: "#/definitions/insertId"
         createDate:
           type: "string"
           format: "date-time"
-          description: "ユーザーID"
+          description: "管理者ID"
         updateDate:
           type: "string"
           format: "date-time"
-          description: "ユーザーID"
-  userList:
+          description: "管理者ID"
+  adminList:
     type: "object"
     properties:
       data:
         type: "array"
         items:
-          $ref: "#/definitions/user"
+          $ref: "#/definitions/admin"
     title: "accountList"
-  createUser:
+  createAdmin:
     type: "object"
     required:
-    - "hideMail"
-    - "hideName"
     - "mail"
-    - "name"
     - "password"
-    - "userType"
+    - "screen_name"
     properties:
-      name:
+      screen_name:
         type: "string"
-        description: "ユーザーID"
+        description: "表示名"
         maxLength: 128
       password:
         type: "string"
@@ -381,78 +223,20 @@ definitions:
         maxLength: 256
       mail:
         type: "string"
-        format: "email"
+        format: "mail"
         description: "メールアドレス"
         maxLength: 255
-      userType:
-        type: "integer"
-        format: "int32"
-        description: "管理権限（1:admin、2:user）"
-        enum:
-        - 1
-        - 2
-      hideName:
-        type: "integer"
-        format: "int32"
-        description: "名前非表示（0:表示、1:非表示）"
-        enum:
-        - 0
-        - 1
-      hideMail:
-        type: "integer"
-        format: "int32"
-        description: "メールアドレス非表示（0:表示、1:非表示）"
-        enum:
-        - 0
-        - 1
       expired:
         type: "string"
         format: "date-time"
         description: "アカウント期限切れ日時"
-    title: "createUser"
-  bbs:
-    allOf:
-    - $ref: "#/definitions/createBbs"
-    - type: "object"
-      properties:
-        bbsId:
-          $ref: "#/definitions/insertId"
-        createDate:
-          type: "string"
-          format: "date-time"
-          description: "ユーザーID"
-        updateDate:
-          type: "string"
-          format: "date-time"
-          description: "ユーザーID"
-  bbsList:
-    type: "object"
-    properties:
-      data:
-        type: "array"
-        items:
-          $ref: "#/definitions/bbs"
-    title: "bbsList"
-  createBbs:
-    type: "object"
-    required:
-    - "message"
-    - "userId"
-    properties:
-      userId:
-        type: "integer"
-        format: "int32"
-        description: "ユーザーID"
-      message:
-        type: "string"
-        description: "メッセージ"
-    title: "createBbs"
+    title: "createAdmin"
   insertId:
     type: "object"
     properties:
       insertId:
         type: "integer"
-        format: "int32"
+        format: "int64"
         description: "insertId"
   error:
     type: "object"
@@ -465,20 +249,13 @@ definitions:
       fields:
         type: "string"
 parameters:
-  userId:
-    name: "userId"
+  adminId:
+    name: "adminId"
     in: "path"
-    description: "ユーザーID"
+    description: "管理者ID"
     required: true
     type: "integer"
-    format: "int32"
-  bbsId:
-    name: "bbsId"
-    in: "path"
-    description: "BBSID"
-    required: true
-    type: "integer"
-    format: "int32"
+    format: "int64"
 responses:
   badRequest:
     description: "リクエスト情報が不正です"
