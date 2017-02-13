@@ -2,18 +2,18 @@
 
 var db = require('sample-db');
 var logger = require('sample-logger');
-var TABLE_NAME = 'bbs';
+var TABLE_NAME = 'sentence';
 
 /**
- * BBS追加
+ * 短文追加
  */
-exports.createBbs = function(args, res, next) {
+exports.createSentence = function(args, res, next) {
   var params = args.body.value;
   var query = db.insert(TABLE_NAME, params);
 
   query.then(function(insertId) {
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Location', 'https://node.local-fw.com/v1/bbs/' + insertId);
+    res.setHeader('Location', 'https://node.local-fw.com/v1/sentences/' + insertId);
     res.status(201);
     res.end(JSON.stringify({"insertId": insertId}));
   }).catch(function (error) {
@@ -22,10 +22,10 @@ exports.createBbs = function(args, res, next) {
 };
 
 /**
- * BBS削除
+ * 短文削除
  */
-exports.deleteBbs = function(args, res, next) {
-  var where = {'bbs_id' : args.bbsId.value };
+exports.deleteSentence = function(args, res, next) {
+  var where = {'sentenceId' : args.sentenceId.value };
   var query = db.delete(TABLE_NAME, where);
 
   query.then(function(rows) {
@@ -38,11 +38,11 @@ exports.deleteBbs = function(args, res, next) {
 };
 
 /**
- * BBS取得
+ * 短文取得
  */
-exports.getBbs = function(args, res, next) {
-  var sql = 'SELECT * FROM bbs where bbs_id = ?';
-  var param = args.bbsId.value;
+exports.getSentence = function(args, res, next) {
+  var sql = 'SELECT * FROM '+ TABLE_NAME +' where sentence_id = ?';
+  var param = args.sentenceId.value;
   var query = db.getOne(sql, param);
 
   query.then(function(row) {
@@ -54,16 +54,24 @@ exports.getBbs = function(args, res, next) {
     }
   }).catch(function (error) {
     next(error);
-  })
-};
+  })};
 
 /**
- * BBS一覧取得
+ * 短文一覧取得
  */
-exports.listBbs = function(args, res, next) {
+exports.listSentence = function(args, res, next) {
   var param = {};
-  var sql   = 'SELECT * FROM bbs';
-  var query = db.query(sql, param);
+  var sql   = "SELECT * FROM "+ TABLE_NAME;
+  var query = db.query({
+    sql: sql,
+    parameter: param,
+    typeCast: function (field, next) {
+      if (field.type === 'LONGLONG') {
+        return field.string();
+      }
+      return next();
+    },
+  });
 
   query.then(function(rows) {
     res.setHeader('Content-Type', 'application/json');
@@ -74,16 +82,16 @@ exports.listBbs = function(args, res, next) {
 };
 
 /**
- * BBS更新
+ * 短文更新
  */
-exports.updateBbs = function(args, res, next) {
+exports.updateSentence = function(args, res, next) {
   var param = args.body.value;
-  var where = {bbs_id: args.bbsId.value};
+  var where = {sentence_id: args.sentenceId.value};
   var query = db.update(TABLE_NAME, param, where);
 
-  query.then(function(rows) {
+  query.then(function(row) {
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Location', 'https://node.local-fw.com/v1/bbs/' + args.bbsId.value);
+    res.setHeader('Location', 'https://node.local-fw.com/v1/sentences/' + args.sentenceId.value);
     res.status(204);
     res.end();
   }).catch(function (error) {
