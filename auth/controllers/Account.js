@@ -35,3 +35,9 @@ module.exports.updateAccount = function updateAccount (req, res, next) {
   Account.updateAccount(req.swagger.params, res, next);
   performance.end();
 };
+
+module.exports.searchAccount = function searchAccount (req, res, next) {
+  performance.start();
+  Account.searchAccount(req.swagger.params, res, next);
+  performance.end();
+};

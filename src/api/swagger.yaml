@@ -188,13 +188,17 @@ definitions:
     - type: "object"
       properties:
         sentenceId:
-          type: "number"
+          type: "integer"
           format: "int64"
           description: "ユーザID"
         userId:
-          type: "number"
+          type: "integer"
           format: "int64"
           description: "短文ID"
+        sentence:
+          type: "string"
+          description: "短文"
+          maxLength: 256
         createDate:
           type: "string"
           format: "date-time"

@@ -82,20 +82,24 @@ exports.listAccount = function(args, res, next) {
 };
 
 /**
- * ユーザ更新
+ * ユーザ検索
  */
-exports.updateAccount = function(args, res, next) {
-  var param = args.body.value;
-  var where = {account_id: args.accountId.value};
-  var query = db.update(TABLE_NAME, param, where);
+exports.searchAccount = function(args, res, next) {
+  var param = {};
+  var query = db.query({
+    sql: 'SELECT * FROM '+ TABLE_NAME +' WHERE ?',
+    typeCast: function (field, next) {
+      if (field.type === 'LONGLONG') {
+        return field.string();
+      }
+      return next();
+    }
+  }, args.body.value);
 
-  query.then(function(row) {
+  query.then(function(rows) {
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Location', 'https://node.local-fw.com/v1/accounts/' + args.accountId.value);
-    res.status(204);
-    res.end();
+    res.end(JSON.stringify({data: rows}));
   }).catch(function (error) {
     next(error);
   });
 };
-

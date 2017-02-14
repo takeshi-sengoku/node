@@ -41,20 +41,24 @@ exports.deleteSentence = function(args, res, next) {
  * 短文取得
  */
 exports.getSentence = function(args, res, next) {
-  var sql = 'SELECT * FROM '+ TABLE_NAME +' where sentence_id = ?';
-  var param = args.sentenceId.value;
-  var query = db.getOne(sql, param);
-
-  query.then(function(row) {
-    if (row === undefined) {
-      next();
-    } else {
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify(row));
+  var param = {};
+  var query = db.query({
+    sql: 'SELECT * FROM '+ TABLE_NAME +' WHERE sentence_id = ?',
+    typeCast: function (field, next) {
+      if (field.type === 'LONGLONG') {
+        return field.string();
+      }
+      return next();
     }
+  }, args.sentenceId.originalValue);
+
+  query.then(function(rows) {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(rows[0]));
   }).catch(function (error) {
     next(error);
-  })};
+  });
+};
 
 /**
  * 短文一覧取得

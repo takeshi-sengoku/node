@@ -83,6 +83,34 @@ paths:
       - ApiSecurity:
         - "write:account"
       x-swagger-router-controller: "Account"
+  /accounts/list/search:
+    post:
+      tags:
+      - "Account"
+      description: "ユーザ検索"
+      operationId: "searchAccount"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "検索"
+        required: true
+        schema:
+          $ref: "#/definitions/searchAccount"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/accountList"
+        401:
+          description: "認証エラー"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "read:account"
+      x-swagger-router-controller: "Account"
   /accounts/{userId}:
     get:
       tags:
@@ -188,25 +216,25 @@ definitions:
     - type: "object"
       properties:
         userId:
-          type: "number"
+          type: "integer"
           format: "int64"
           description: "ユーザID"
         screenName:
           type: "string"
           format: "string"
-          description: "表示名"
+          description: "表示ID"
         name:
           type: "string"
           format: "string"
-          description: "リソース表示名"
+          description: "表示名"
         createDate:
           type: "string"
           format: "date-time"
-          description: "作成日"
+          description: "作成日時"
         updateDate:
           type: "string"
           format: "date-time"
-          description: "更新日"
+          description: "更新日時"
   accountList:
     type: "object"
     properties:
@@ -218,10 +246,12 @@ definitions:
   createAccount:
     type: "object"
     required:
-    - "screen_name"
+    - "mail"
     - "name"
+    - "password"
+    - "screenName"
     properties:
-      screen_name:
+      screenName:
         type: "string"
         description: "リソース表示名"
         maxLength: 128
@@ -244,6 +274,32 @@ definitions:
         format: "date-time"
         description: "アカウント期限切れ日時"
     title: "createAccount"
+  searchAccount:
+    type: "object"
+    properties:
+      screenName:
+        type: "string"
+        description: "リソース表示名"
+        maxLength: 128
+      name:
+        type: "string"
+        description: "表示名"
+        maxLength: 128
+      password:
+        type: "string"
+        format: "password"
+        description: "パスワード"
+        maxLength: 256
+      mail:
+        type: "string"
+        format: "mail"
+        description: "メールアドレス"
+        maxLength: 255
+      expired:
+        type: "string"
+        format: "date-time"
+        description: "アカウント期限切れ日時"
+    title: "searchAccount"
   insertId:
     type: "object"
     properties:
