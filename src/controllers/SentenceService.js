@@ -9,8 +9,15 @@ var TABLE_NAME = 'sentence';
  */
 exports.createSentence = function(args, res, next) {
   var params = args.body.value;
-  var query = db.insert(TABLE_NAME, params);
 
+  var date = new Date();
+  var unixTimestamp = Math.floor(date.getTime() / 1000);
+  var cap = unixTimestamp - 1487148337;
+
+  params['sentence_id'] = 200001000000000002 + cap;
+  params['user_id'] 	= '100001000000000002';
+
+  var query = db.insert(TABLE_NAME, params);
   query.then(function(insertId) {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Location', 'https://node.local-fw.com/v1/sentences/' + insertId);
@@ -42,16 +49,7 @@ exports.deleteSentence = function(args, res, next) {
  */
 exports.getSentence = function(args, res, next) {
   var param = {};
-  var query = db.query({
-    sql: 'SELECT * FROM '+ TABLE_NAME +' WHERE sentence_id = ?',
-    typeCast: function (field, next) {
-      if (field.type === 'LONGLONG') {
-        return field.string();
-      }
-      return next();
-    }
-  }, args.sentenceId.originalValue);
-
+  var query = db.query('SELECT * FROM '+ TABLE_NAME +' WHERE sentence_id = ?', args.sentenceId.originalValue);
   query.then(function(rows) {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(rows[0]));
@@ -69,12 +67,6 @@ exports.listSentence = function(args, res, next) {
   var query = db.query({
     sql: sql,
     parameter: param,
-    typeCast: function (field, next) {
-      if (field.type === 'LONGLONG') {
-        return field.string();
-      }
-      return next();
-    },
   });
 
   query.then(function(rows) {
@@ -113,12 +105,6 @@ exports.searchSentence = function(args, res, next) {
   var param = {};
   var query = db.query({
     sql: 'SELECT * FROM '+ TABLE_NAME +' WHERE ?',
-    typeCast: function (field, next) {
-      if (field.type === 'LONGLONG') {
-        return field.string();
-      }
-      return next();
-    }
   }, args.body.value);
 
   query.then(function(rows) {

@@ -4,5 +4,6 @@
   "user": "vagrant",
   "password": "vagrant",
   "database": "admin",
-  "timezone": "jst"
+  "timezone": "jst",
+  "supportBigNumbers": true
 }
