@@ -49,7 +49,7 @@ exports.deleteSentence = function(args, res, next) {
  */
 exports.getSentence = function(args, res, next) {
   var param = {};
-  var query = db.query('SELECT * FROM '+ TABLE_NAME +' WHERE sentence_id = ?', args.sentenceId.originalValue);
+  var query = db.query('SELECT * FROM ?? WHERE sentence_id = ?', [TABLE_NAME, args.sentenceId.originalValue]);
   query.then(function(rows) {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(rows[0]));
@@ -99,14 +99,8 @@ exports.updateSentence = function(args, res, next) {
  * 短文検索
  */
 exports.searchSentence = function(args, res, next) {
-
-	logger.debug(args.body);
-
   var param = {};
-  var query = db.query({
-    sql: 'SELECT * FROM '+ TABLE_NAME +' WHERE ?',
-  }, args.body.value);
-
+  var query = db.query('SELECT * FROM ?? WHERE ?', [TABLE_NAME, args.body.value]);
   query.then(function(rows) {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({data: rows}));
