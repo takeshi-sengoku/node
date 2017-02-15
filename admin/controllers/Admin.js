@@ -35,3 +35,9 @@ module.exports.updateAdmin = function updateAdmin (req, res, next) {
   Admin.updateAdmin(req.swagger.params, res, next);
   performance.end();
 };
+
+module.exports.searchAdmin = function searchAdmin (req, res, next) {
+  performance.start();
+  Admin.searchAdmin(req.swagger.params, res, next);
+  performance.end();
+};

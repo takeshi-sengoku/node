@@ -35,3 +35,9 @@ module.exports.updateSentence = function updateSentence (req, res, next) {
   Sentence.updateSentence(req.swagger.params, res, next);
   performance.end();
 };
+
+module.exports.searchSentence = function searchSentence (req, res, next) {
+  performance.start();
+  Sentence.searchSentence(req.swagger.params, res, next);
+  performance.end();
+};

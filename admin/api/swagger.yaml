@@ -83,6 +83,34 @@ paths:
       - ApiSecurity:
         - "write:admin"
       x-swagger-router-controller: "Admin"
+  /admins/list/search:
+    post:
+      tags:
+      - "admin"
+      description: "ユーザ検索"
+      operationId: "searchAdmin"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "検索"
+        required: true
+        schema:
+          $ref: "#/definitions/searchAdmin"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/adminList"
+        401:
+          description: "認証エラー"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "read:admin"
+      x-swagger-router-controller: "Admin"
   /admins/{adminId}:
     get:
       tags:
@@ -231,6 +259,20 @@ definitions:
         format: "date-time"
         description: "アカウント期限切れ日時"
     title: "createAdmin"
+  searchAdmin:
+    type: "object"
+    properties:
+      adminId:
+        $ref: "#/definitions/insertId"
+      createDate:
+        type: "string"
+        format: "date-time"
+        description: "管理者ID"
+      updateDate:
+        type: "string"
+        format: "date-time"
+        description: "管理者ID"
+    title: "searchAdmin"
   insertId:
     type: "object"
     properties:

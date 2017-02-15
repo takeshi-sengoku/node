@@ -2,7 +2,7 @@
 
 var db = require('sample-db');
 var logger = require('sample-logger');
-var TABLE_NAME = 'admins';
+var TABLE_NAME = 'admin';
 
 /**
  * 管理者追加
@@ -41,54 +41,69 @@ exports.deleteAdmin = function(args, res, next) {
  * 管理者取得
  */
 exports.getAdmin = function(args, res, next) {
-  var sql = 'SELECT * FROM admins where admin_id = ?';
-  var param = args.adminId.value;
-  var query = db.getOne(sql, param);
-
-  query.then(function(row) {
-    if (row === undefined) {
-      next();
-    } else {
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify(row));
+  var param = {};
+  var query = db.query({
+    sql: 'SELECT * FROM '+ TABLE_NAME +' WHERE admin_id = ?',
+    typeCast: function (field, next) {
+      if (field.type === 'LONGLONG') {
+        return field.string();
+      }
+      return next();
     }
+  }, args.userId.originalValue);
+
+  query.then(function(rows) {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(rows[0]));
   }).catch(function (error) {
     next(error);
-  })};
+  });
+}
 
 /**
  * 管理者一覧取得
  */
 exports.listAdmin = function(args, res, next) {
-//  var param = {};
-//  var sql   = 'SELECT * FROM admins';
-//  var query = db.query(sql, param);
-//
-//  query.then(function(rows) {
-//    res.setHeader('Content-Type', 'application/json');
-//    res.end(JSON.stringify({data: rows}));
-//  }).catch(function (error) {
-//    next(error);
-//  });
-	res.setHeader('Content-Type', 'application/json');
-	res.end(JSON.stringify({data: [{'a' : 1}]}));
-};
+  var param = {};
+  var sql   = "SELECT * FROM "+ TABLE_NAME;
+  var query = db.query({
+    sql: sql,
+    parameter: param,
+    typeCast: function (field, next) {
+      if (field.type === 'LONGLONG') {
+        return field.string();
+      }
+      return next();
+    },
+  });
 
-/**
- * 管理者更新
- */
-exports.updateAdmin = function(args, res, next) {
-  var param = args.body.value;
-  var where = {admin_id: args.adminId.value};
-  var query = db.update(TABLE_NAME, param, where);
-
-  query.then(function(row) {
+  query.then(function(rows) {
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Location', 'https://node.local-fw.com/v1/admins/' + args.adminId.value);
-    res.status(204);
-    res.end();
+    res.end(JSON.stringify({data: rows}));
   }).catch(function (error) {
     next(error);
   });
 };
 
+/**
+ * 管理者検索
+ */
+exports.searchAdmin = function(args, res, next) {
+  var param = {};
+  var query = db.query({
+    sql: 'SELECT * FROM '+ TABLE_NAME +' WHERE ?',
+    typeCast: function (field, next) {
+      if (field.type === 'LONGLONG') {
+        return field.string();
+      }
+      return next();
+    }
+  }, args.body.value);
+
+  query.then(function(rows) {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({data: rows}));
+  }).catch(function (error) {
+    next(error);
+  });
+};

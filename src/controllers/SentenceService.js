@@ -103,3 +103,28 @@ exports.updateSentence = function(args, res, next) {
   });
 };
 
+/**
+ * 短文検索
+ */
+exports.searchSentence = function(args, res, next) {
+
+	logger.debug(args.body);
+
+  var param = {};
+  var query = db.query({
+    sql: 'SELECT * FROM '+ TABLE_NAME +' WHERE ?',
+    typeCast: function (field, next) {
+      if (field.type === 'LONGLONG') {
+        return field.string();
+      }
+      return next();
+    }
+  }, args.body.value);
+
+  query.then(function(rows) {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({data: rows}));
+  }).catch(function (error) {
+    next(error);
+  });
+};

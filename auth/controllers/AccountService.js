@@ -41,20 +41,24 @@ exports.deleteAccount = function(args, res, next) {
  * ユーザ取得
  */
 exports.getAccount = function(args, res, next) {
-  var sql = 'SELECT * FROM + TABLE_NAME + where account_id = ?';
-  var param = args.accountId.value;
-  var query = db.getOne(sql, param);
-
-  query.then(function(row) {
-    if (row === undefined) {
-      next();
-    } else {
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify(row));
+  var param = {};
+  var query = db.query({
+    sql: 'SELECT * FROM '+ TABLE_NAME +' WHERE user_id = ?',
+    typeCast: function (field, next) {
+      if (field.type === 'LONGLONG') {
+        return field.string();
+      }
+      return next();
     }
+  }, args.userId.originalValue);
+
+  query.then(function(rows) {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(rows[0]));
   }).catch(function (error) {
     next(error);
-  })};
+  });
+}
 
 /**
  * ユーザ一覧取得

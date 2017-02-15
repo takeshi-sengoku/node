@@ -3,7 +3,7 @@ swagger: "2.0"
 info:
   description: "`Swagger`を使用したREST APIのサンプルです\n"
   version: "1.0.0"
-  title: "Spring - Sample REST API"
+  title: "Sentence - Sample REST API"
   termsOfService: ""
 host: "node.local-fw.com"
 basePath: "/v1/api"
@@ -82,6 +82,34 @@ paths:
       security:
       - ApiSecurity:
         - "write:sentence"
+      x-swagger-router-controller: "Sentence"
+  /sentences/list/search:
+    post:
+      tags:
+      - "Sentence"
+      description: "短文検索"
+      operationId: "searchSentence"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "検索"
+        required: true
+        schema:
+          $ref: "#/definitions/searchSentence"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/sentenceList"
+        401:
+          description: "認証エラー"
+        default:
+          description: "予期しないエラー"
+          schema:
+            $ref: "#/definitions/error"
+      security:
+      - ApiSecurity:
+        - "read:sentence"
       x-swagger-router-controller: "Sentence"
   /sentences/{sentenceId}:
     get:
@@ -188,25 +216,27 @@ definitions:
     - type: "object"
       properties:
         sentenceId:
-          type: "integer"
-          format: "int64"
-          description: "ユーザID"
-        userId:
-          type: "integer"
-          format: "int64"
+          type: "string"
+          format: "string"
           description: "短文ID"
+          maxLength: 64
+        userId:
+          type: "string"
+          format: "string"
+          description: "ユーザID"
+          maxLength: 64
         sentence:
           type: "string"
+          format: "string"
           description: "短文"
-          maxLength: 256
         createDate:
           type: "string"
           format: "date-time"
-          description: "作成日"
+          description: "作成日時"
         updateDate:
           type: "string"
           format: "date-time"
-          description: "更新日"
+          description: "更新日時"
   sentenceList:
     type: "object"
     properties:
@@ -222,9 +252,29 @@ definitions:
     properties:
       sentence:
         type: "string"
+        format: "string"
         description: "短文"
-        maxLength: 256
     title: "createSentence"
+  searchSentence:
+    type: "object"
+    properties:
+      sentenceId:
+        type: "string"
+        description: "短文ID"
+        maxLength: 64
+      userId:
+        type: "string"
+        description: "ユーザID"
+        maxLength: 64
+      sentence:
+        type: "string"
+        format: "string"
+        description: "短文"
+      expired:
+        type: "string"
+        format: "date-time"
+        description: "期限切れ日時"
+    title: "searchSentence"
   insertId:
     type: "object"
     properties:

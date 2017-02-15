@@ -216,8 +216,8 @@ definitions:
     - type: "object"
       properties:
         userId:
-          type: "integer"
-          format: "int64"
+          type: "string"
+          format: "string"
           description: "ユーザID"
         screenName:
           type: "string"
@@ -251,6 +251,10 @@ definitions:
     - "password"
     - "screenName"
     properties:
+      userId:
+        type: "string"
+        format: "string"
+        description: "ユーザID"
       screenName:
         type: "string"
         description: "リソース表示名"
@@ -304,8 +308,7 @@ definitions:
     type: "object"
     properties:
       insertId:
-        type: "integer"
-        format: "int64"
+        type: "string"
         description: "insertId"
   error:
     type: "object"
