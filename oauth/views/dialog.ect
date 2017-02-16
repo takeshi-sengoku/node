@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <title></title>
+</head>
+<body style="background-color:#eee;padding-top:20px;">
+  <div style="max-width: 350px; margin: 0 auto;">
+    <form action="/oauth/authorize" method="post">
+      <input name="transaction_id" type="hidden" value="<%= @transactionID %>">
+      <input name="scope" type="hidden" value="<%= @client.scope %>">
+      <h3><%= @client.name %>にアカウントの利用を許可しますか？</h3>
+      <button type="submit" class="btn btn-primary" name="accept" value="Accept" id="allow">Accept</button>
+      <button type="submit" class="btn btn-default" name="cancel" value="Deny"id="cancel">Deny</button>
+    </form>
+  </div>
+</body>
+</html>
