@@ -10,7 +10,7 @@
     <form action="/oauth/authorize" method="post">
       <input name="transaction_id" type="hidden" value="<%= @transactionID %>">
       <input name="scope" type="hidden" value="<%= @client.scope %>">
-      <h3><%= @client.name %>にアカウントの利用を許可しますか？</h3>
+      <h3><%= @client.clientName %>にアカウントの利用を許可しますか？</h3>
       <button type="submit" class="btn btn-primary" name="accept" value="Accept" id="allow">Accept</button>
       <button type="submit" class="btn btn-default" name="cancel" value="Deny"id="cancel">Deny</button>
     </form>

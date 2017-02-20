@@ -50,7 +50,7 @@ app.get('/login', function(req, res, next) {
 
 // ログインページ(ログインボタン押下)
 app.post('/login', 
-  passport.authenticate('local',{ 
+  passport.authenticate('local',{
     successReturnToOrRedirect: '/',
     failureRedirect: '/login',
     failureFlash: true

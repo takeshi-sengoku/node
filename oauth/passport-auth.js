@@ -10,17 +10,20 @@ var db = require('sample-db');
 // ログイン時のローカル認証設定
 passport.use(new LocalStrategy({passReqToCallback:true }, function(req, username, password, done) {
   // ユーザー検索
-  var query = db.getOne('select * from users where name = ?', username);
+  var query = db.getOne('select * from account where screen_name = ?', username);
 
   query.then(function(row) {
     if (!row) {
+      // ユーザーが見つからない場合
       req.flash('error', 'invalid username or password');
       done(null, false);
     } else {
+      // パスワード不一致
       if(row.password !== password ) {
         req.flash('error', 'invalid username or password');
         done(null, false);
       } else {
+        // 処理成功
         done(null, row);
       }
     }
@@ -31,7 +34,7 @@ passport.use(new LocalStrategy({passReqToCallback:true }, function(req, username
 
 // BASIC認証設定
 passport.use(new BasicStrategy(function(clientId, clientSecret, done) {
-  var query = db.getOne('select * from oauth_clients where client_id = ? and client_secret = ?', clientId, clientSecret);
+  var query = db.getOne('select * from client where client_id = ? and client_secret = ?', clientId, clientSecret);
   query.then(function(row) {
     if (!row) {
       done(null, false);
@@ -44,7 +47,7 @@ passport.use(new BasicStrategy(function(clientId, clientSecret, done) {
 
 // クライアント・パスワード認証
 passport.use(new ClientPasswordStrategy(function(clientId, clientSecret, done)  {
-  var query = db.getOne('select * from oauth_clients where client_id = ? and client_secret = ?', [clientId, clientSecret]);
+  var query = db.getOne('select * from client where client_id = ? and client_secret = ?', [clientId, clientSecret]);
   query.then(function(row) {
     if (!row) {
       done(null, false);
@@ -65,7 +68,7 @@ passport.serializeUser(function(user, done) {
 // セッションに格納しているIDからユーザー情報の復元
 passport.deserializeUser(function(id, done) {
   // TODO 後で実装
-  var query = db.getOne('select * from users where user_id = ?', id);
+  var query = db.getOne('select * from account where user_id = ?', id);
   query.then(function(row) {
     done(null, row);
   });

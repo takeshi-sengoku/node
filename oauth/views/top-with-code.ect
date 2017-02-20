@@ -20,7 +20,7 @@
   <form class="form-inline" action="/oauth/token" method="post">
     <input type="hidden" name="code" value="<%= @code %>">
     <input type="hidden" name="redirect_uri" value="http://192.168.56.101:3000/">
-    <input type="hidden" name="client_id" value="abc123">
+    <input type="hidden" name="client_id" value="sample">
     <input type="hidden" name="client_secret" value="secret">
     <input type="hidden" name="grant_type" value="authorization_code">
     <button type="submit" class="btn btn-primary">アクセストークン取得</button>

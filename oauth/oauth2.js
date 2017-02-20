@@ -6,21 +6,23 @@ var config = require('./config');
 var db = require('sample-db');
 var uuid = require('node-uuid');
 var passport = require('passport');
-
+var snowflake = require('node-snowflake').Snowflake;
 var server = oauth2orize.createServer();
+var moment = require('moment');
 
 // 認可コードグラント
-server.grant(oauth2orize.grant.code(function(client, redirectURI, user, args, done) {
+server.grant(oauth2orize.grant.code(function(client, redirectURI, user, ares, done) {
   var authCode = uuid.v4();
   // 認可コードを発行して永続化する
   var params = {
-    code: authCode,
-    client_id: client.id,
-    redirecturi: redirectURI,
-    user_id: user.userId,
-    scope: args.scope
+    authCode: authCode,
+    clientId: client.clientId,
+    userId: user.userId,
+    redirectUri: redirectURI,
+    expires: config.authorizationCode.expires,
+    scope: ares.scope
   };
-  var query = db.insert('authorizationcode', params);
+  var query = db.insert('authorization_code', params);
 
   query.then(function() {
     done(null, authCode);
@@ -30,50 +32,42 @@ server.grant(oauth2orize.grant.code(function(client, redirectURI, user, args, do
 
 }));
 
+// 認可コードからアクセストークンを発行
 server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, done) {
   var entity;
   var accessToken;
   var refreshToken;
   db.connection.beginTransaction(function(err) {
     if (err) { throw err; }
-    var query = db.getOne('select * from authorizationcode where code = ?', code);
+    var query = db.getOne('select * from authorization_code where auth_code = ?', code);
     query.then(function(authorizationCodeEntity) {
       if (!authorizationCodeEntity) {
-        reject('認可コードが見つかりません');
+        return Promise.reject('認可コードが見つかりません');
       }
       // token生成時に使用するため、SELECT結果を退避
       entity = authorizationCodeEntity;
 
       // 認可コードテーブルの削除
-      var params = {code: code};
-      return db.delete('authorizationcode', params);
+      var params = {authCode: code};
+      return db.delete('authorization_code', params);
 
     }).then(function() {
 
       // アクセストークン登録
-      accessToken = uuid.v4();
-      var params = {
-        token_id: accessToken,
-        expire: config.token.expiresIn,
-        user_id: entity.userId,
-        client_id: client.clientId,
-        scope: entity.scope
-      };
-
-      return db.insert('oauth_token', params);
-    
-    }).then(function() {
-    
-      // リフレッシュトークン登録
+      accessToken  = uuid.v4();
       refreshToken = uuid.v4();
       var params = {
-        token_id: refreshToken,
-        user_id: entity.userId,
-        client_id: client.clientId
+        accessTokenId: snowflake.nextId(),
+        accessToken: accessToken,
+        accessTokenExpires: moment().add(config.token.expiresIn, 'seconds').format('YYYY-MM-DD HH:mm:ss.SSS'),
+        refreshToken: refreshToken,
+        refreshTokenExpires: moment().add(config.token.expiresIn, 'seconds').format('YYYY-MM-DD HH:mm:ss.SSS'),
+        userId: entity.userId,
+        clientId: client.clientId,
       };
 
-      return db.insert('refresh_token', params);
-    
+      return db.insert('access_token', params);
+
     }).then(function() {
       db.connection.commit(function(err) {
         if (err) {
@@ -82,27 +76,58 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
           });
         }
       });
-      done(null, accessToken, refreshToken, 1000000);
+      done(null, accessToken, refreshToken, config.token.expiresIn);
     }).catch(function (err) {
       db.connection.rollback(function() {
+        console.error(err);
         done(null, false);
       });
     });
   });
 }));
+
+// リフレッシュトークンを元にアクセストークンを発行
+server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken, scope, done) {
+  // リフレッシュトークンの正当性チェック
+  db.connection.beginTransaction(function(err) {
+    if (err) { throw err; }
+    var query = db.getOne('select * from auth_refresh_token where token_id = ?', refreshToken);
+    query.then(function(findRefreshToken) {
+      if (!findRefreshToken) {
+        return Promise.reject('リフレッシュトークンが見つかりません');
+      }
+      // アクセストークンの更新
+      var fields = {
+        accessToken: uuid.v4(),
+        accessTokenExpires: moment().add(config.token.expiresIn, 'seconds').format('YYYY-MM-DD HH:mm:ss.SSS'),
+        refreshToken: uuid.v4(),
+        refreshTokenExpires: moment().add(config.token.expiresIn, 'seconds').format('YYYY-MM-DD HH:mm:ss.SSS'),
+      };
+      var where = {accessTokenId: findRefreshToken.accessTokenId};
+      return db.update('access_token');
+    }).then(function() {
+      db.connection.commit()
+    }).catch(function(err) {
+      console.error(err);
+      done(null, false);
+    });
+  });
+}));
+
 // アプリケーション認証画面の表示
 exports.authorization = [
   login.ensureLoggedIn(),
   server.authorization(function(clientId, redirectURI, scope, done) {
-    var query = db.getOne('select * from oauth_clients where client_id = ?', clientId);
+    var query = db.getOne('select * from client where client_id = ?', clientId);
     query.then(function(client) {
       if (!client) {
-        return done(null, false);
+        return Promise.reject('Missing clients.')
       }
       client.scope = scope;
       return done(null, client, redirectURI);
     }).catch(function(err) {
-      return done(err);
+      console.error(err);
+      return done(null, false);
     });
   }),
   function (req, res, next) {
@@ -136,7 +161,7 @@ server.serializeClient(function(client, done) {
 
 // クライアントのデシリアライズ
 server.deserializeClient(function(id, done) {
-  var query = db.getOne('select * from oauth_clients where client_id = ?', id);
+  var query = db.getOne('select * from client where client_id = ?', id);
   query.then(function(row) {
     done(null, row);
   });
