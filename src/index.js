@@ -16,6 +16,7 @@ var upload = multer();
 var swaggerTools = require('swagger-tools');
 var jsyaml = require('js-yaml');
 var fs = require('fs');
+var passport = require('passport');
 
 var serverPort = conf.port;
 var app = express();
@@ -40,10 +41,15 @@ swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
   // gzip圧縮
   app.use(compression());
 
+  // PASSPORTセットアップ
+  app.use(passport.initialize());
+  require('./passport-auth');
+
   // アクセスログ
   app.use(httpAccessLogger.accessConfig);
 
   // リクエストログにbody情報を表示するためにbodyParserをuse
+  app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
 
   // リクエストログ
@@ -58,6 +64,24 @@ swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
   // Interpret Swagger resources and attach metadata to request
   // - must be first in swagger-tools middleware chain
   app.use(middleware.swaggerMetadata());
+
+  // SwaggerSecurity
+  app.use(middleware.swaggerSecurity({
+    ApiSecurity: function(req, def, scopes, callback) {
+      passport.authenticate('bearer', function (err, user, info) {
+        if (err) {
+          callback(new Error('Error in passport authenticate'));
+        } else if (!user) {
+          callback(new Error('Failed to authenticate oAuth token'));
+        } else {
+          console.log(JSON.stringify(info));
+          req.user = user;
+          callback();
+        }
+      })(req, null, callback);
+    }
+  }));
+
   // Validate Swagger requests
   app.use(middleware.swaggerValidator({
     validateResponse : false // TODO: API定義が固まったらtrueにする
