@@ -1,0 +1,8 @@
+{
+  "spring": "/var/run/node/spring.sock",
+  "admin": "/var/run/node/admin.sock",
+  "account": "/var/run/node/account.sock",
+  "adminAuth": "/var/run/node/admin_auth.sock",
+  "auth": "/var/run/node/auth.sock",
+  "oAuth": "/var/run/node/oauth.sock"
+}
