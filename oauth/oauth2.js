@@ -34,6 +34,7 @@ server.grant(oauth2orize.grant.code(function(client, redirectURI, user, ares, do
 
 // 認可コードからアクセストークンを発行
 server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, done) {
+  console.log('start accesstoken create ');
   var entity;
   var accessToken;
   var refreshToken;
@@ -42,7 +43,7 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
     var query = db.getOne('select * from authorization_code where auth_code = ?', code);
     query.then(function(authorizationCodeEntity) {
       if (!authorizationCodeEntity) {
-        return Promise.reject('認可コードが見つかりません');
+        return Promise.reject('access_denied');
       }
       // token生成時に使用するため、SELECT結果を退避
       entity = authorizationCodeEntity;
@@ -80,7 +81,7 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
     }).catch(function (err) {
       db.connection.rollback(function() {
         console.error(err);
-        done(null, false);
+        done(null, false, err);
       });
     });
   });
@@ -88,25 +89,36 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
 
 // リフレッシュトークンを元にアクセストークンを発行
 server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken, scope, done) {
+  var newAccessToken;
+  var newRefreshToken;
   // リフレッシュトークンの正当性チェック
   db.connection.beginTransaction(function(err) {
     if (err) { throw err; }
-    var query = db.getOne('select * from auth_refresh_token where token_id = ?', refreshToken);
+    var query = db.getOne('select * from access_token where refresh_token = ?', refreshToken);
     query.then(function(findRefreshToken) {
       if (!findRefreshToken) {
-        return Promise.reject('リフレッシュトークンが見つかりません');
+        return Promise.reject('Invalid refresh Token');
       }
       // アクセストークンの更新
+      newAccessToken  = uuid.v4();
+      newRefreshToken = uuid.v4();
       var fields = {
-        accessToken: uuid.v4(),
+        accessToken: newAccessToken,
         accessTokenExpires: moment().add(config.token.expiresIn, 'seconds').format('YYYY-MM-DD HH:mm:ss.SSS'),
-        refreshToken: uuid.v4(),
+        refreshToken: newRefreshToken,
         refreshTokenExpires: moment().add(config.token.expiresIn, 'seconds').format('YYYY-MM-DD HH:mm:ss.SSS'),
       };
       var where = {accessTokenId: findRefreshToken.accessTokenId};
-      return db.update('access_token');
+      return db.update('access_token', fields, where);
     }).then(function() {
-      db.connection.commit()
+      db.connection.commit(function(err) {
+        if (err) {
+          db.connection.rollback(function() {
+            throw err;
+          });
+        }
+      });
+      done(null, newAccessToken, newRefreshToken, config.token.expiresIn);
     }).catch(function(err) {
       console.error(err);
       done(null, false);
@@ -121,7 +133,7 @@ exports.authorization = [
     var query = db.getOne('select * from client where client_id = ?', clientId);
     query.then(function(client) {
       if (!client) {
-        return Promise.reject('Missing clients.')
+        return Promise.reject('Missing clients.');
       }
       client.scope = scope;
       return done(null, client, redirectURI);
@@ -149,7 +161,7 @@ exports.decision = [
 
 // トークン発行
 exports.token = [
-  passport.authenticate(['oauth2-client-password'], { session: false }),
+  passport.authenticate(['basic', 'oauth2-client-password'], { session: false }),
   server.token(),
   server.errorHandler(),
 ];

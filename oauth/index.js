@@ -62,7 +62,7 @@ app.get('/',
   login.ensureLoggedIn(),
   function(req, res, next) {
     if(req.query.code) {
-      res.render('top-with-code', {code: req.query.code});
+      res.render('token', {code: req.query.code});
     } else {
       res.render('top');
     }
@@ -75,6 +75,18 @@ app.post('/oauth/authorize', oauth2.decision);
 
 // トークンの生成
 app.post('/oauth/token', oauth2.token);
+
+// ベアラートークンのチェック
+app.get('/oauth/bearer',
+    passport.authenticate('bearer'),
+    function(req, res) {
+      var userInfo = {
+        userEntity: req.user,
+        tokenInfo: req.authInfo
+      };
+      res.setHeader('Content-Type', 'application/json');
+      res.send(userInfo);
+    });
 
 // リダイレクトテスト用URL
 app.get('/redirect', function(req, res, next) {

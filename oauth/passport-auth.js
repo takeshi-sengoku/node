@@ -4,8 +4,10 @@
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var BasicStrategy = require('passport-http').BasicStrategy;
+var BearerStrategy = require('passport-http-bearer').Strategy;
 var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
 var db = require('sample-db');
+var moment = require('moment');
 
 // ログイン時のローカル認証設定
 passport.use(new LocalStrategy({passReqToCallback:true }, function(req, username, password, done) {
@@ -34,14 +36,14 @@ passport.use(new LocalStrategy({passReqToCallback:true }, function(req, username
 
 // BASIC認証設定
 passport.use(new BasicStrategy(function(clientId, clientSecret, done) {
-  var query = db.getOne('select * from client where client_id = ? and client_secret = ?', clientId, clientSecret);
+  var query = db.getOne('select * from client where client_id = ? and client_secret = ?', [clientId, clientSecret]);
   query.then(function(row) {
     if (!row) {
       done(null, false);
     }
     done(null, row);
   }).catch(function(err) {
-    done(null, false);
+    done(null, false, err);
   });
 }));
 
@@ -50,14 +52,40 @@ passport.use(new ClientPasswordStrategy(function(clientId, clientSecret, done)  
   var query = db.getOne('select * from client where client_id = ? and client_secret = ?', [clientId, clientSecret]);
   query.then(function(row) {
     if (!row) {
-      done(null, false);
+      return done(null, false);
     }
-    done(null, row);
+    return done(null, row);
   }).catch(function(err) {
-    done(err, false);
+    return done(err, false);
   });
 }));
 
+// Bearerトークンのチェック
+passport.use(new BearerStrategy(function(accessToken, done) {
+  var token;
+  var user;
+  var query = db.getOne('select * from access_token where access_token = ?', accessToken);
+  query.then(function(tokenEntity) {
+    // トークンが見つからない場合
+    if (!tokenEntity) {
+      return Promise.reject();
+    }
+    // トークンの期限切れ
+    if (moment(tokenEntity.accessTokenExpires).isBefore(moment()) ) {
+      console.log(moment(tokenEntity.accessTokenExpires));
+      return Promise.reject('The access token expired');
+    }
+    token = tokenEntity;
+    return db.getOne('select * from account where user_id = ?', tokenEntity.userId);
+  }).then(function(userEntity) {
+    if (!userEntity) {
+      return done(null, false);
+    }
+    return done(null, userEntity, token);
+  }).catch(function(err) {
+    return done(null, false, err);
+  });
+}));
 // ユーザーのシリアライズ
 // (セッションへの格納)
 passport.serializeUser(function(user, done) {

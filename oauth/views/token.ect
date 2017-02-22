@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+    integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+      crossorigin="anonymous"></script>
+  <script type="text/javascript">
+      $(document).ready(function () {
+          $("#submit").click(function (event) {
+            $.ajax({
+              type: 'POST',
+              headers: {
+                "Authorization": "Basic " + window.btoa('sample:secret')
+              },
+              dataType: 'json',
+              url: "/oauth/token",
+              data: 'code=<%= @code %>&redirect_uri=http://192.168.56.101:3000&client_id=sample&grant_type=authorization_code',
+              success: function (result) {
+                $('.access_token').text(result.access_token);
+                $('.refresh_token').text(result.refresh_token);
+                $('#accessTokenArea').hide();
+                $('#refreshTokenArea').show();
+                $('#refresh').click(function (event) {
+                  $.ajax({
+                    type: 'POST',
+                    headers: {
+                      "Authorization": "Basic " + window.btoa('sample:secret')
+                    },
+                    dataType: 'json',
+                    url: "/oauth/token",
+                    data: 'grant_type=refresh_token&refresh_token=' + result.refresh_token,
+                    success: function(result) {
+                      $('.access_token').text(result.access_token);
+                      $('.refresh_token').text(result.refresh_token);
+                      console.log(result.refresh_token);
+                    }
+                  });
+                });
+              }
+            });
+          });
+      })
+  </script>
+  <title></title>
+</head>
+<body style="background-color:#eee;padding-top: 20px;">
+<div style="max-width: 600px;">
+  <h2>Sample APIへようこそ</h2>
+  <div id="accessTokenArea">
+    <h3>アクセストークンの取得</h3>
+    <form class="form-inline" action="/oauth/token" method="post">
+      <input type="hidden" name="code" value="<%= @code %>">
+      <input type="hidden" name="redirect_uri" value="http://192.168.56.101:3000/ref">
+      <input type="hidden" name="client_id" value="sample">
+      <!--<input type="hidden" name="client_secret" value="secret">-->
+      <input type="hidden" name="grant_type" value="authorization_code">
+      <button id="submit" type="button" class="btn btn-primary">アクセストークン取得</button>
+    </form>
+  </div>
+  <div id="refreshTokenArea" style="display: none;">
+    <h3>アクセストークンが発行されました</h3>
+    <form class="form-inline" action"/oauth/token" method="post" >
+      <pre>アクセストークン:<span class="access_token"></span></pre>
+      <pre>リフレッシュトークン:<span class="refresh_token"></span></pre>
+      <button id="refresh" type="button" class="btn btn-primary">アクセストークン更新</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>
