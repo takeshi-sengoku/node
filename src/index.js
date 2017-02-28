@@ -1,29 +1,29 @@
 'use strict';
 
 // Require
-var conf    = require('config');
-var express = require('express');
-var helmet  = require('helmet');
-var logger  = require('sample-logger');
-var compression = require('compression');
-var httpAccessLogger  = require('sample-http-access-logger');
-var requestLogger  = require('sample-request-logger');
-var connectionPoolMiddleware = require('sample-connection-pool-middleware');
-var https = require('https');
-var bodyParser = require('body-parser');
-var multer = require('multer');
-var upload = multer();
-var swaggerTools = require('swagger-tools');
-var jsyaml = require('js-yaml');
-var fs = require('fs');
-var passport = require('passport');
+const conf    = require('config');
+const express = require('express');
+const helmet  = require('helmet');
+const logger  = require('sample-logger');
+const compression = require('compression');
+const httpAccessLogger  = require('sample-http-access-logger');
+const requestLogger  = require('sample-request-logger');
+const connectionPoolMiddleware = require('sample-connection-pool-middleware');
+const https = require('https');
+const bodyParser = require('body-parser');
+const multer = require('multer');
+const upload = multer();
+const swaggerTools = require('swagger-tools');
+const jsyaml = require('js-yaml');
+const fs = require('fs');
+const passport = require('passport');
 
-var serverPort = conf.port;
-var app = express();
-var secureServer;
+const serverPort = conf.port;
+const app = express();
+let secureServer;
 
 // swaggerRouter configuration
-var options = {
+const options = {
   swaggerUi: '/swagger.json',
   controllers: './controllers',
   //Conditionally turn on stubs (mock mode)
@@ -32,8 +32,8 @@ var options = {
 
 // The Swagger document
 // (require it, build it programmatically, fetch it from a URL, ...)
-var spec = fs.readFileSync(conf.appBasePath + '/api/swagger.yaml', 'utf8');
-var swaggerDoc = jsyaml.safeLoad(spec);
+const spec = fs.readFileSync(conf.appBasePath + '/api/swagger.yaml', 'utf8');
+const swaggerDoc = jsyaml.safeLoad(spec);
 
 // Initialize the Swagger middleware
 swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
@@ -58,9 +58,6 @@ swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
   // セキュリティ対策
   app.use(helmet());
 
-  // DB接続のセットアップ
-  app.use(connectionPoolMiddleware());
-
   // Interpret Swagger resources and attach metadata to request
   // - must be first in swagger-tools middleware chain
   app.use(middleware.swaggerMetadata());
@@ -68,19 +65,26 @@ swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
   // SwaggerSecurity
   app.use(middleware.swaggerSecurity({
     ApiSecurity: function(req, def, scopes, callback) {
-      passport.authenticate('bearer', function (err, user, info) {
+      return passport.authenticate('bearer', function(err, user, info) {
         if (err) {
-          callback(new Error('Error in passport authenticate'));
-        } else if (!user) {
-          callback(new Error('Failed to authenticate oAuth token'));
+          return callback(err);
+        }
+        if (!user) {
+          req.res.setHeader('WWW-Authenticate', info);
+          req.res.status(401);
+          req.res.end('unauthorized');
+          return;
+        // scopeチェックをここで実施する
         } else {
-          console.log(JSON.stringify(info));
-          req.user = user;
+          req.dbuser = info.clientId;
           callback();
         }
       })(req, null, callback);
-    }
+   }
   }));
+
+  // DB接続のセットアップ
+  app.use(connectionPoolMiddleware());
 
   // Validate Swagger requests
   app.use(middleware.swaggerValidator({
@@ -98,7 +102,7 @@ swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
   app.use(error404);
 
   // Start the server
-  var sslOptions = {
+  const sslOptions = {
     key: fs.readFileSync(conf.certKey),
     cert: fs.readFileSync(conf.certCrt),
     ca: fs.readFileSync(conf.certCsr),
@@ -142,7 +146,7 @@ function errorHandler(err, req, res, next) {
 
   // バリデーション
   if (err.failedValidation === true) {
-    var errorObj = {};
+    const errorObj = {};
     errorObj.code = 400;
 
     // schemaエラーの場合
@@ -158,7 +162,7 @@ function errorHandler(err, req, res, next) {
     res.end(JSON.stringify(errorObj));
   } else {
     logger.error(err);
-    var errObj = {
+    const errObj = {
         code: 500,
         message: 'unexpected Error'
     };

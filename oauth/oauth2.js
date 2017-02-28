@@ -36,6 +36,7 @@ server.grant(oauth2orize.grant.code(function(client, redirectURI, user, ares, do
 server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, done) {
   console.log('start accesstoken create ');
   var entity;
+  var accessTokenId;
   var accessToken;
   var refreshToken;
   db.connection.beginTransaction(function(err) {
@@ -55,10 +56,11 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
     }).then(function() {
 
       // アクセストークン登録
+      accessTokenId = snowflake.nextId();
       accessToken  = uuid.v4();
       refreshToken = uuid.v4();
       var params = {
-        accessTokenId: snowflake.nextId(),
+        accessTokenId: accessTokenId,
         accessToken: accessToken,
         accessTokenExpires: moment().add(config.token.expiresIn, 'seconds').format('YYYY-MM-DD HH:mm:ss.SSS'),
         refreshToken: refreshToken,
@@ -69,6 +71,41 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectURI, do
 
       return db.insert('access_token', params);
 
+    }).then(function() {
+      var scopes = entity.scope.split(',');
+      var scopeMst = require('./scope.json');
+      var bitScope = {read:0, write:0 };
+      for(var i = 0; i < scopes.length; i++ ) {
+        // scopeを[read/write]:[対象スコープ]に分割
+        var [vector, scope] = scopes[i].split(':');
+        bitScope[vector] |= parseInt(scopeMst[vector][scope], 2);
+      }
+      // read権限のInsert
+      if (bitScope['read'] !== 0) {
+        var params = {
+          accessTokenId: accessTokenId,
+          vector: scopeMst['vectorMap']['read'],
+          scope: bitScope['read']
+        };
+        db.insert('scope', params).then(function() {
+          // 何もしない
+        }).catch(function(err) {
+          throw err;
+        });
+      }
+      // write権限のInsert
+      if (bitScope['write'] !== 0) {
+        var params = {
+          accessTokenId: accessTokenId,
+          vector: scopeMst['vectorMap']['write'],
+          scope: bitScope['write']
+        };
+        db.insert('scope', params).then(function() {
+          // 何もしない
+        }).catch(function(err) {
+          throw err;
+        });
+      }
     }).then(function() {
       db.connection.commit(function(err) {
         if (err) {
@@ -108,6 +145,7 @@ server.exchange(oauth2orize.exchange.refreshToken(function(client, refreshToken,
         refreshToken: newRefreshToken,
         refreshTokenExpires: moment().add(config.token.expiresIn, 'seconds').format('YYYY-MM-DD HH:mm:ss.SSS'),
       };
+      console.log(JSON.stringify(findRefreshToken));
       var where = {accessTokenId: findRefreshToken.accessTokenId};
       return db.update('access_token', fields, where);
     }).then(function() {

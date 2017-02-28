@@ -64,6 +64,7 @@ passport.use(new ClientPasswordStrategy(function(clientId, clientSecret, done)  
 passport.use(new BearerStrategy(function(accessToken, done) {
   var token;
   var user;
+  var scope;
   var query = db.getOne('select * from access_token where access_token = ?', accessToken);
   query.then(function(tokenEntity) {
     // トークンが見つからない場合
@@ -81,7 +82,10 @@ passport.use(new BearerStrategy(function(accessToken, done) {
     if (!userEntity) {
       return done(null, false);
     }
-    return done(null, userEntity, token);
+    user = userEntity;
+    return db.query('select * from scope where access_token_id = ?', token.accessTokenId);
+  }).then(function(scopes) {
+    return done(null, user, {token: token, scopes: scopes});
   }).catch(function(err) {
     return done(null, false, err);
   });
