@@ -6,7 +6,7 @@ var LocalStrategy = require('passport-local').Strategy;
 var BasicStrategy = require('passport-http').BasicStrategy;
 var BearerStrategy = require('passport-http-bearer').Strategy;
 var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
-var db = require('sample-db');
+var db = require('./oauth-db.js');
 var moment = require('moment');
 
 // ログイン時のローカル認証設定
