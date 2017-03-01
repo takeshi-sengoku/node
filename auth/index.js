@@ -1,144 +1,105 @@
 'use strict';
 
-// Require
-var conf    = require('config');
-var express = require('express');
-var helmet  = require('helmet');
-var logger  = require('sample-logger');
-var compression = require('compression');
-var httpAccessLogger  = require('sample-http-access-logger');
-var requestLogger  = require('sample-request-logger');
-var connectionPoolMiddleware = require('sample-connection-pool-middleware');
-var https = require('https');
+// require modules
 var bodyParser = require('body-parser');
-var multer = require('multer');
-var upload = multer();
-var swaggerTools = require('swagger-tools');
-var jsyaml = require('js-yaml');
-var fs = require('fs');
+var flash = require('connect-flash');
+var ect = require('ect');
+var express = require('express');
+var login = require('connect-ensure-login');
+var util = require('util');
+var oauth2 = require('./oauth2');
+var passport = require('passport');
+var session = require('express-session');
 
-var serverPort = conf.port;
+// Create an Express application.
 var app = express();
-var secureServer;
 
-// swaggerRouter configuration
-var options = {
-  swaggerUi: '/swagger.json',
-  controllers: './controllers',
-  //Conditionally turn on stubs (mock mode)
-  useStubs: process.env.NODE_ENV === 'development' ? true : false
-};
+// Template Engine setup
+var ectRenderer = ect({ watch: true, root: __dirname + '/views', ext : '.ect' });
+app.set('view engine', 'ect');
+app.engine('ect', ectRenderer.render);
 
-// The Swagger document
-// (require it, build it programmatically, fetch it from a URL, ...)
-var spec = fs.readFileSync(conf.appBasePath + '/api/swagger.yaml', 'utf8');
-var swaggerDoc = jsyaml.safeLoad(spec);
+// ---------------------------------------------------------
+// Middleware settings
+// ---------------------------------------------------------
+app.use(flash());
+// Session configuration
+app.use(session({
+  secret: 's3Cur3',
+  resave: false,
+  saveUninitialized: false,
+  name: 'sessionId'
+}));
 
-// Initialize the Swagger middleware
-swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
+// Add body parser.
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-  // gzip圧縮
-  app.use(compression());
+// Passport configuration
+app.use(passport.initialize());
+app.use(passport.session());
+require('./passport-auth');
 
-  // アクセスログ
-  app.use(httpAccessLogger.accessConfig);
-
-  // リクエストログにbody情報を表示するためにbodyParserをuse
-  app.use(bodyParser.json());
-
-  // リクエストログ
-  app.use(upload.array(), requestLogger());
-
-  // セキュリティ対策
-  app.use(helmet());
-
-  // DB接続のセットアップ
-  app.use(connectionPoolMiddleware());
-
-  // Interpret Swagger resources and attach metadata to request
-  // - must be first in swagger-tools middleware chain
-  app.use(middleware.swaggerMetadata());
-  // Validate Swagger requests
-  app.use(middleware.swaggerValidator({
-    validateResponse : false // TODO: API定義が固まったらtrueにする
-  }));
-  // Route validated requests to appropriate controller
-  app.use(middleware.swaggerRouter(options));
-  // Serve the Swagger documents and Swagger UI
-  app.use(middleware.swaggerUi());
-
-  // エラーハンドリング
-  app.use(errorHandler);
-
-  // 404エラー
-  app.use(error404);
-
-  // Start the server
-  var sslOptions = {
-    key: fs.readFileSync(conf.certKey),
-    cert: fs.readFileSync(conf.certCrt),
-    ca: fs.readFileSync(conf.certCsr),
-    requestCert: false,
-    rejectUnauthorized: false
-  };
-
-  // mochaでのテスト時にエラーとならないようにする
-  if (!module.parent) {
-    secureServer = https.createServer(sslOptions, app);
-    secureServer.listen(serverPort);
-  }
+// ---------------------------------------------------------
+// ルーティング処理
+// ---------------------------------------------------------
+// ログインページ
+app.get('/login', function(req, res, next) {
+  res.render('login', {error: req.flash('error')});
 });
 
-//mocha+supertestでテストできるようモジュール化
-module.exports = app;
+// ログインページ(ログインボタン押下)
+app.post('/login', 
+  passport.authenticate('local',{
+    successReturnToOrRedirect: '/',
+    failureRedirect: '/login',
+    failureFlash: true
+  })
+);
 
-/**
- * 404エラー
- * @param req
- * @param res
- * @param next
- * @returns
- */
-function error404(req, res, next) {
-  res.status(404);
-  res.end('notfound! : ' + req.path);
-}
-
-/**
- * エラーハンドリング
- * @param err
- * @param req
- * @param res
- * @param next
- * @returns
- */
-function errorHandler(err, req, res, next) {
-
-  res.setHeader('Content-Type', 'application/json');
-
-  // バリデーション
-  if (err.failedValidation === true) {
-    var errorObj = {};
-    errorObj.code = 400;
-
-    // schemaエラーの場合
-    if (err.results !== undefined) {
-      errorObj.errors = err.results.errors;
+// 動作検証用(OAuthの仕組としては不要なURL)
+app.get('/', 
+  login.ensureLoggedIn(),
+  function(req, res, next) {
+    if(req.query.code) {
+      res.render('token', {code: req.query.code});
     } else {
-      errorObj.errors = {
-          code: err.code,
-          message: err.message,
-          path: [err.paramName]
-      };
+      res.render('top');
     }
-    res.end(JSON.stringify(errorObj));
-  } else {
-    logger.error(err);
-    var errObj = {
-        code: 500,
-        message: 'unexpected Error'
-    };
-    res.status(err.status || 500);
-    res.end(JSON.stringify(errObj));
-  }
-}
+});
+// アプリケーション認証画面の表示
+app.get('/oauth/authorize', oauth2.authorization);
+
+// 認可コード
+app.post('/oauth/authorize', oauth2.decision);
+
+// トークンの生成
+app.post('/oauth/token', oauth2.token);
+
+// ベアラートークンのチェック
+app.get('/oauth/bearer',
+    passport.authenticate('bearer'),
+    function(req, res) {
+      var userInfo = {
+        userEntity: req.user,
+        tokenInfo: req.authInfo
+      };
+      res.setHeader('Content-Type', 'application/json');
+      res.send(userInfo);
+    });
+
+// リダイレクトテスト用URL
+app.get('/redirect', function(req, res, next) {
+  res.render('redirect');
+});
+// Error Handling
+app.use(function(err, req, res, next) {
+  console.error(err);
+  res.status(500);
+  res.send(err);
+});
+
+
+app.listen(3000);
+
+

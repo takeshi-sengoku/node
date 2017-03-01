@@ -1,9 +1,0 @@
-{
-  "host": "db.local-fw.com",
-  "port": 3306,
-  "user": "vagrant",
-  "password": "vagrant",
-  "database": "auth",
-  "timezone": "jst",
-  "supportBigNumbers": true
-}

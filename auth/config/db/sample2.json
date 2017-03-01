@@ -1,8 +1,0 @@
-{
-  "host": "192.168.56.103",
-  "port": 3306,
-  "user": "vagrant",
-  "password": "vagrant",
-  "database": "sample2",
-  "timezone": "jst"
-}
