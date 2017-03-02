@@ -14,12 +14,22 @@ var connectOptions = {
   "supportBigNumbers": true
 };
 var connection = mysql.createConnection(connectOptions);
-connection.connect(function (err) {
-  if (err) {
-    console.error('error connection: %s', err.stack);
-    return;
-  }
-});
+
+function handleDisconnect(_connection) {
+  _connection.on('error', function(error) {
+    if (error.code !== 'PROTOCOL_CONNECTION_LOST') {
+      throw error;
+    }
+    connection = mysql.createConnection(connectOptions);
+    handleDisconnect(connection);
+    connection.connect(function(err) {
+      if(err) {
+        throw err;
+      }
+    });
+  });
+}
+handleDisconnect(connection);
 exports.connection = connection;
 
 /**
